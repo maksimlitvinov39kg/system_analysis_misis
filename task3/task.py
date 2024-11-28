@@ -88,11 +88,13 @@ input_data = '''
     }
 }
 '''
+def main(json_string):
+    graph = json.loads(json_string)
 
-graph = json.loads(input_data)
+    matrix = build_relation_matrix(graph)
 
-matrix = build_relation_matrix(graph)
+    entropy = calculate_entropy(matrix)
 
-entropy = calculate_entropy(matrix)
-
-print(f"Значение энтропии: {entropy:.2f}")
+    print(f"Значение энтропии: {entropy:.2f}")
+    
+main(input_data)

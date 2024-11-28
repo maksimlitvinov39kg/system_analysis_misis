@@ -69,10 +69,13 @@ input_data = '''
     }
 }
 '''
+def main(json_string):
+    
+    graph = json.loads(json_string)
 
-graph = json.loads(input_data)
+    matrix = build_relation_matrix(graph)
 
-matrix = build_relation_matrix(graph)
+    for row in matrix:
+        print(row)
 
-for row in matrix:
-    print(row)
+main(input_data)

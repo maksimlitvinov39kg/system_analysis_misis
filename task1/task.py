@@ -43,9 +43,9 @@ json_input = '''
     }
 }
 '''
+def main(json_string):
+    graph = json.loads(json_string)
+    graph_info = build_graph(graph)
+    print_graph_info(graph_info)
 
-graph = json.loads(json_input)
-
-graph_info = build_graph(graph)
-
-print_graph_info(graph_info)
+main(json_input)
