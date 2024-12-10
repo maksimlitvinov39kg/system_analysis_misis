@@ -1,79 +1,87 @@
+from math import log2
 import json
-import math
-from collections import defaultdict
 
-def extract_vertices(graph):
-    vertices = set()
+def make_node(parent, children):
+    return {"parent": parent, "children": children}
 
-    def dfs(node):
-        vertices.add(node)
-        for child in graph.get(node, {}):
-            dfs(child)
+def rec_parse_input(parent, data, graph):
+    desc = []
+    for key, value in data.items():
+        desc.append(key)
+        if value:
+            graph[key] = make_node(parent, rec_parse_input(key, value, graph))
+        else:
+            graph[key] = make_node(parent, [])
+    return desc
 
-    for root in graph:
-        dfs(root)
+def json_to_tree(json_string):
+    graph = {}
+    data = json.loads(json_string)
+    rec_parse_input(None, data, graph)
+    return graph
 
-    return sorted(vertices)
+def siblings_list(graph, curr_key):
+    parent = graph[curr_key]["parent"]
+    return [key for key in graph if graph[key]["parent"] == parent and key != curr_key]
 
-def build_relation_matrix(graph):
-    vertices = extract_vertices(graph)
-    n = len(vertices)
+def calculate_parents(key, graph):
+    count = 0
+    while graph[key]["parent"] is not None:
+        count += 1
+        key = graph[key]["parent"]
+    return count
 
-    vertex_index = {v: i for i, v in enumerate(vertices)}
+def calculate_indirect_children(graph, children, counter):
+    for child in children:
+        counter[0] += 1
+        calculate_indirect_children(graph, graph[child]["children"], counter)
 
-    r1 = [[0] * n for _ in range(5)]
+def calculate_relations(graph):
+    size = len(graph)
+    result = [[0] * size for _ in range(5)]
 
-    def dfs(node, parent=None):
-        node_idx = vertex_index[node]
-        if parent is not None:
-            parent_idx = vertex_index[parent]
-            r1[0][parent_idx] += 1
-            r1[1][node_idx] += 1
-            for sibling in graph[parent]:
-                if sibling != node:
-                    sibling_idx = vertex_index[sibling]
-                    r1[4][node_idx] += 1
-                    r1[4][sibling_idx] += 1
+    for curr_key, value in graph.items():
+        idx = int(curr_key) - 1
+        result[0][idx] = 1 if value["parent"] else 0
+        result[1][idx] = len(value["children"])
+        result[2][idx] = calculate_parents(curr_key, graph) - 1 if value["parent"] else 0
 
-        for child in graph.get(node, {}):
-            dfs(child, node)
+        counter = [0]
+        calculate_indirect_children(graph, value["children"], counter)
+        result[3][idx] = counter[0]
 
-    def dfs_indirect(node, parent=None, depth=0):
-        node_idx = vertex_index[node]
-        if parent is not None and depth > 1:
-            parent_idx = vertex_index[parent]
-            r1[2][parent_idx] += 1
-            r1[3][node_idx] += 1
+        result[4][idx] = len(siblings_list(graph, curr_key))
 
-        for child in graph.get(node, {}):
-            dfs_indirect(child, node, depth + 1)
-
-    for root in graph:
-        dfs(root)
-        dfs_indirect(root)
-
-    return r1
+    return result
 
 def calculate_entropy(matrix):
-    elements = []
-    for row in matrix:
-        elements.extend(row)
+    n = len(matrix[0])
+    total_entropy = 0
 
-    total_elements = len(elements)
+    for column in zip(*matrix):
+        column_entropy = 0
+        for value in column:
+            if value > 0:
+                probability = value / (n - 1)
+                column_entropy -= probability * log2(probability)
 
-    frequency = defaultdict(int)
-    for el in elements:
-        frequency[el] += 1
+        total_entropy += column_entropy
 
-    entropy = 0.0
-    for count in frequency.values():
-        p_i = count / total_elements
-        entropy -= p_i * math.log2(p_i)
+    return total_entropy
 
-    return entropy
+def parse_graph(data):
+    graph = {}
+    rec_parse_input(None, data, graph)
+    return graph
 
-input_data = '''
-{
+def main(json_string):
+    data = json.loads(json_string)
+    graph = parse_graph(data)
+    relations = calculate_relations(graph)
+    entropy = calculate_entropy(relations)
+    print(f"Calculated Entropy: {entropy:.2f}")
+
+test_data = {
     "1": {
         "2": {
             "3": {
@@ -87,14 +95,5 @@ input_data = '''
         }
     }
 }
-'''
-def main(json_string):
-    graph = json.loads(json_string)
-
-    matrix = build_relation_matrix(graph)
-
-    entropy = calculate_entropy(matrix)
-
-    print(f"Значение энтропии: {entropy:.2f}")
-    
-main(input_data)
+json_string = json.dumps(test_data)
+main(json_string)

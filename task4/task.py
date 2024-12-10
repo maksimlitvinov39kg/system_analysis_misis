@@ -1,14 +1,6 @@
 import numpy as np
 from math import log2
 
-matrix = np.array([
-    [20, 15, 10, 5],
-    [30, 20, 15, 10],
-    [25, 25, 20, 15],
-    [20, 20, 25, 20],
-    [15, 15, 30, 25]
-])
-
 
 def entropy(prob_matrix):
     H = 0
@@ -34,5 +26,14 @@ def main(matrix) :
     print(f"Количество информации I(X, Y): {I_XY:.2f}")
     print(f"Энтропия совместного события H(XY): {H_XY:.2f}")
     
+  
+matrix = np.array([
+    [20, 15, 10, 5],
+    [30, 20, 15, 10],
+    [25, 25, 20, 15],
+    [20, 20, 25, 20],
+    [15, 15, 30, 25]
+])  
+ 
     
 main(matrix)
